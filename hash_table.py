@@ -88,6 +88,7 @@ class HashTable:
         if self.get_load() > 0.75:
             self.rehash()
 
+
     def find(self, key):
         ''' Find the key in the hash table and return the corresponding value or True/False. '''
         slot = self.get_slot(key)
