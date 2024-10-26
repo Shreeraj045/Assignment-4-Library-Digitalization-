@@ -1,7 +1,7 @@
 # DO NOT MODIFY THIS FILE
 
 # primes in descending order
-prime_sizes = [29]
+prime_sizes = [47,23,11,5,2]
 
 def set_primes(list_of_primes):
     global prime_sizes

@@ -60,57 +60,58 @@ def get_primes(start = 10**3, end = 10**5):
 def main():
     book_titles = ["book1", "book2"]
     texts = [["The", "name", "of", "this", "book", "contains", "a", "number"],
-             ["You", "can", "name", "this", "book", "anything"]]
-            
+             ["You", "can", "name", "this", "book", "anything",'this','can']]
+
     unique_words = []
-    
+
     for text in texts:
         unique = []
-        
-        for word in text:
+
+        for word in text[:]:  # Use a copy of the original list
             if word not in unique:
                 unique.append(word)
-        
+
         unique_words.append(sorted(unique))
-        
+
     word_to_books = {}
-    
-    for book, texts in zip(book_titles, texts):
-        for word in texts:
+
+    for book, text in zip(book_titles, texts):
+        for word in text[:]:  # Use a copy of the original list
             if word not in word_to_books:
                 word_to_books[word] = [book]
             else:
                 word_to_books[word].append(book)
         
     set_primes(get_primes())
-        
-    # Check Musk         
+    #
+    # Check Musk
     musk_time = time.time()
     musk_lib = library.MuskLibrary(book_titles, texts)
+    print(musk_lib.print_books())
     musk_time = time.time() - musk_time
-    
+    #
     print(f"Musk Library sorting took {musk_time:.4f}s")
     print(f"Checking Library functions for Musk:")
     check_lib(musk_lib, unique_words, word_to_books)
-    
-    jobs_lib = library.JGBLibrary("Jobs", (10, 29))
-    gates_lib = library.JGBLibrary("Gates", (10, 37))
-    bezos_lib = library.JGBLibrary("Bezos", 
-                              (10, 37,
-                               7, 13)
-                              )
-    
-    for lib, name in zip([jobs_lib, gates_lib, bezos_lib], ["Jobs", "Gates", "Bezos"]):
-        time_taken = time.time()
-        
-        for book, text in zip(book_titles, texts):
-            lib.add_book(book, text)
-        
-        time_taken = time.time() - time_taken
-        
-        print(f"{name} Library took {time_taken:.4f}s")
-        print(f"Checking Library Functions for {name}: ")
-        check_lib(lib, unique_words, word_to_books)
+    #
+    # jobs_lib = library.JGBLibrary("Jobs", (10, 29))
+    # gates_lib = library.JGBLibrary("Gates", (10, 37))
+    # bezos_lib = library.JGBLibrary("Bezos",
+    #                           (10, 37,
+    #                            7, 13)
+    #                           )
+    #
+    # for lib, name in zip([jobs_lib, gates_lib, bezos_lib], ["Jobs", "Gates", "Bezos"]):
+    #     time_taken = time.time()
+    #
+    #     for book, text in zip(book_titles, texts):
+    #         lib.add_book(book, text)
+    #
+    #     time_taken = time.time() - time_taken
+    #
+    #     print(f"{name} Library took {time_taken:.4f}s")
+    #     print(f"Checking Library Functions for {name}: ")
+    #     check_lib(lib, unique_words, word_to_books)
     
 
 if __name__ == "__main__":
