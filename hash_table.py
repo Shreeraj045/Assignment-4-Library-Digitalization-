@@ -19,21 +19,22 @@ class HashTable:
         else:
             return ord(char) - ord('A') + 26
 
-    def polynomial_accumulation_hash(self, key, z):
+    def polynomial_accumulation_hash(self, key, z, m):  # Added m parameter
         h = 0
-        for char in reversed(key):
+        for char in reversed(key):  # reversed is correct!
             h = h * z + self.get_int_from_str(char)
-        return h % self.size
+        return h % m
 
     def get_slot(self, key):
         if self.collision_type == "Double":
-            return self.polynomial_accumulation_hash(key, self.z1)
+            return self.polynomial_accumulation_hash(key, self.z1, self.size)
         else:
-            return self.polynomial_accumulation_hash(key, self.z)
+            return self.polynomial_accumulation_hash(key, self.z, self.size)
 
     def get_step(self, key):
-        h2 = self.polynomial_accumulation_hash(key, self.z2)
-        return self.c2 - (h2 % self.c2)
+        # Calculate h2 with modulo c2 instead of size
+        h2 = self.polynomial_accumulation_hash(key, self.z2, self.c2)
+        return self.c2 - h2  # Remove the extra modulo operation
 
     def chain_insert(self, key, value):
         slot = self.get_slot(key)
@@ -47,7 +48,6 @@ class HashTable:
 
     def linear_insert(self, key, value):
         if self.get_load() >= 1:
-            print("ERROR - Table Full Already")
             return False
 
         slot = self.get_slot(key)
@@ -73,35 +73,47 @@ class HashTable:
         return False
 
     def double_insert(self, key, value):
-        if self.get_load() == 1:
-            print("ERROR - Table Full Already")
+        """
+        Insert a key-value pair using double hashing.
+        Returns True if insertion/update successful, False otherwise.
+        """
+        # Check if table is full
+        if self.get_load() >= 1:
             return False
 
-        slot = self.get_slot(key)
-        step = self.get_step(key)
-        i = 0
+        # Get initial slot and step size
+        initial_slot = self.get_slot(key)
+        step_size = self.get_step(key)
+
+        # Keep track of probing sequence
+        current_slot = initial_slot
+        probes = 0
         first_empty = -1
 
-        while i < self.size:
-            current_slot = (slot + i * step) % self.size
-
+        # Probe until we find the key or have checked all slots
+        while probes < self.size:
+            # If slot is empty
             if self.table[current_slot] is None:
+                # Remember first empty slot
                 if first_empty == -1:
                     first_empty = current_slot
+                # We can stop probing since all subsequent slots must be empty
                 break
 
-            current_key = self.get_key(self.table[current_slot])
-            compare_key = key
-
-            if current_key == compare_key:
+            # If we find the key, update the value
+            elif self.get_key(self.table[current_slot]) == key:
                 self.table[current_slot] = value
-                return False
+                return True
 
-            i += 1
+            # Move to next probe position
+            probes += 1
+            current_slot = (initial_slot + probes * step_size) % self.size
 
+        # If we found an empty slot and key doesn't exist
         if first_empty != -1:
             self.table[first_empty] = value
             return True
+
         return False
 
     def insert(self, x):
@@ -163,7 +175,7 @@ class HashTable:
         result = []
         for slot in self.table:
             if slot is None:
-                result.append("⟨EMPTY⟩")
+                result.append("<EMPTY>")
             elif self.collision_type == "Chain" and isinstance(slot, list):
                 if not slot:
                     result.append("")

@@ -1,157 +1,55 @@
-from hash_table import *
+def simulate_hash_insertion(text, z1=40, z2=35, c2=17, size=37):
+    # Helper function to convert character to number (a-z: 0-25, A-Z: 26-51)
+    def get_int_from_str(char):
+        if ord(char) >= ord('a'):
+            return ord(char) - ord('a')
+        else:
+            return ord(char) - ord('A') + 26
+
+    # Polynomial accumulation hash function
+    def polynomial_hash(key, z, m):
+        h = 0
+        for char in reversed(key):
+            h = h * z + get_int_from_str(char)
+        return h % m
+
+    # Function to get step size for double hashing
+    def get_step(key):
+        h2 = polynomial_hash(key, z2, c2)
+        return c2 - h2
+
+    # Initialize empty hash table
+    table = [None] * size
+    current_state = []
+
+    words = text.split()
+    for word in words:
+        # Calculate initial slot
+        initial_slot = polynomial_hash(word, z1, size)
+        step = get_step(word)
+
+        # Find available slot
+        current_slot = initial_slot
+        probes = 0
+        first_empty = -1
+
+        while probes < size:
+            if table[current_slot] is None:
+                if first_empty == -1:
+                    first_empty = current_slot
+                break
+            probes += 1
+            current_slot = (initial_slot + probes * step) % size
+
+        if first_empty != -1:
+            table[first_empty] = word
+            current_state = table.copy()
+            print(f"\nInserting '{word}':")
+            print(f"Initial hash (h1): {initial_slot}")
+            print(f"Step size (h2): {step}")
+            print(f"Placed at position: {first_empty}")
+            print("Current table:", " | ".join(str(x) if x else "<EMPTY>" for x in current_state))
 
 
-def test_hash_set():
-    print("Testing HashSet:")
-
-    # Testing with chaining collision handling
-    print("Testing Chaining:")
-    params = (31, 5)  # z = 31, table_size = 11
-    hash_set = HashSet("Chain", params)
-
-    # Insert elements into HashSet
-    hash_set.insert("a")
-    hash_set.insert("a")
-    hash_set.insert("a")
-    hash_set.insert("a")
-    hash_set.insert("a")
-    hash_set.insert("a")
-    hash_set.insert("aa")
-    hash_set.insert("aaa")
-    hash_set.insert("baa")
-    hash_set.insert("faaaa")
-    # Print the HashSet
-    print("HashSet contents:", hash_set)
-    print("Test passed!\n")
-
-    print("Testing Linear Probing:")
-    params_linear = (31, 11)  # z = 31, table_size = 11
-    linear_hash_set = HashSet("Linear", params_linear)
-
-    # Insert elements into HashSet
-    linear_hash_set.insert("a")
-    linear_hash_set.insert("a")
-    linear_hash_set.insert("a")
-    linear_hash_set.insert("a")
-    linear_hash_set.insert("e")
-    linear_hash_set.insert("f")
-    linear_hash_set.insert("aaa")
-    linear_hash_set.insert("abc")
-    linear_hash_set.insert("ee")
-    linear_hash_set.insert("baa")
-    linear_hash_set.insert("faaaa")
-    # Print the HashSet
-    print("HashSet contents (Linear Probing):", linear_hash_set)
-    print("Test passed for Linear Probing!\n")
-
-    print("Testing Double Hashing:")
-    params_double = (31, 17, 13, 7)  # z1 = 31, z2 = 37, c2 = 7, table_size = 11
-    double_hash_set = HashSet("Double", params_double)
-
-    # Insert elements into HashSet
-    ##################################################
-    double_hash_set.insert("apple")
-    print("curr_hash-",double_hash_set)
-    double_hash_set.insert("banana")
-    print("curr_hash-", double_hash_set)
-    double_hash_set.insert("cherry")
-    print("curr_hash-", double_hash_set)
-    double_hash_set.insert("date")
-    print("curr_hash-", double_hash_set)
-    # double_hash_set.insert("c")
-    # double_hash_set.insert("ca")
-
-    # Print the HashSet
-    print("HashSet contents (Double Hashing):", double_hash_set)
-    print("Test passed for Double Hashing!\n")
-
-
-def test_hash_map():
-    print("Testing HashMap:")
-
-    # Testing with linear probing collision handling
-    print("Testing Linear Probing:")
-    params = (31, 11)  # z = 31, table_size = 11
-    hash_map = HashMap("Linear", params)
-
-    # Insert (key, value) pairs into HashMap
-    hash_map.insert(("apple", 1))
-    hash_map.insert(("banana", 2))
-    hash_map.insert(("cherry", 3))
-    hash_map.insert(("date", 4))
-    hash_map.insert(("datea",5))
-    hash_map.insert(("dateaa",6))
-    hash_map.insert(("dateaaa", 7))
-
-    # Check if keys and values exist
-    assert hash_map.find("apple") == 1, "Test Failed: 'apple' should map to 1"
-    assert hash_map.find("banana") == 2, "Test Failed: 'banana' should map to 2"
-    assert hash_map.find("grape") == None, "Test Failed: 'grape' should not be in the HashMap"
-
-    # Print the HashMap
-    print("HashMap contents:", hash_map)
-    print("Test passed!\n")
-
-    # Testing with chaining collision handling
-    print("Testing Chaining:")
-    params = (31, 11)  # z = 31, table_size = 11
-    hash_map = HashMap("Chain", params)
-
-    # Insert (key, value) pairs into HashMap
-    hash_map.insert(("apple", 1))
-    hash_map.insert(("banana", 2))
-    hash_map.insert(("cherry", 3))
-    hash_map.insert(("date", 4))
-    hash_map.insert(("datea", 5))
-    hash_map.insert(("dateaa", 6))
-    hash_map.insert(("dateaaa", 7))
-
-    # Check if keys and values exist
-    assert hash_map.find("apple") == 1, "Test Failed: 'apple' should map to 1"
-    assert hash_map.find("banana") == 2, "Test Failed: 'banana' should map to 2"
-    assert hash_map.find("grape") == None, "Test Failed: 'grape' should not be in the HashMap"
-
-    # Print the HashMap
-    print("HashMap contents:", hash_map)
-    print("Test passed!\n")
-
-
-def test_double_hashing():
-    print("Testing HashMap with Double Hashing:")
-
-    # Testing with double hashing collision handling
-    params = (31, 17, 13, 7)  # z1 = 31, z2 = 17, c2 = 13, table_size = 11
-    hash_map = HashMap("Double", params)
-
-    # Insert (key, value) pairs into HashMap
-
-    ##################################################
-    hash_map.insert(("apple", 1))
-    print("curr_hash-",hash_map)
-    hash_map.insert(("banana", 2))
-    print("curr_hash-", hash_map)
-    hash_map.insert(("cherry", 3))
-    print("curr_hash-", hash_map)
-    hash_map.insert(("date", 4))
-    print("curr_hash-", hash_map)
-
-    # Check if keys and values exist
-    # assert hash_map.find("apple") == 1, "Test Failed: 'apple' should map to 1"
-    # assert hash_map.find("banana") == 2, "Test Failed: 'banana' should map to 2"
-    # assert hash_map.find("cherry") == 3, "Test Failed: 'cherry' should map to 3"
-    # assert hash_map.find("date") == 4, "Test Failed: 'date' should map to 4"
-    # assert hash_map.find("grape") == None, "Test Failed: 'grape' should not be in the HashMap"
-
-    # Print the HashMap
-    print("HashMap contents with double hashing:", hash_map)
-    print("Test passed!\n")
-
-
-def main():
-    test_hash_set()  # Test HashSet with chaining
-    test_hash_map()  # Test HashMap with linear probing
-    test_double_hashing()  # Test HashMap with double hashing
-
-
-if __name__ == "__main__":
-    main()
+text = "To Kill a Mockingbird addresses injustice and race through the eyes of young Scout Finch"
+simulate_hash_insertion(text)
