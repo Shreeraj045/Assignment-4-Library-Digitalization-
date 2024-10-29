@@ -1,64 +1,48 @@
 import hash_table as ht
-import dynamic_hash_table as dht
 
 class DigitalLibrary:
     # DO NOT CHANGE FUNCTIONS IN THIS BASE CLASS
-    def __init__(self):
-        pass
-    
-    def distinct_words(self, book_title):
-        pass
-    
-    def count_distinct_words(self, book_title):
-        pass
-    
-    def search_keyword(self, keyword):
-        pass
-    
-    def print_books(self):
-        pass
-    
-
-
+    def __init__(self):pass
+    def distinct_words(self, book_title):pass
+    def count_distinct_words(self, book_title):pass
+    def search_keyword(self, keyword):pass
+    def print_books(self):pass
 class JGBLibrary(DigitalLibrary):
-    # IMPLEMENT ALL FUNCTIONS HERE
     def __init__(self, name, params):
         super().__init__()
         self.name = name
         if name == "Jobs":
             self.collision_type = "Chain"
-            self.z, self.table_size = params
-            self.params = (self.z, self.table_size)
+            self.params = params
         elif name == "Gates":
             self.collision_type = "Linear"
-            self.z, self.table_size = params
-            self.params = (self.z, self.table_size)
+            self.params = params
         else:
             self.collision_type = "Double"
-            self.z1, self.z2, self.c2, self.table_size = params
-            self.params = (self.z1, self.z2, self.c2, self.table_size)
+            self.params = params
+        self.books = ht.HashMap(self.collision_type, self.params)
+        self.all_book_title_list = []
 
-        self.books = dht.DynamicHashMap(self.collision_type, self.params)
     def add_book(self, book_title, text):
-        book_words = dht.DynamicHashSet(self.collision_type, self.params)
+        book_words = ht.HashSet(self.collision_type, self.params)
         for word in text:
             book_words.insert(word)
         self.books.insert((book_title, book_words))
+        self.all_book_title_list.append(book_title)
 
     def distinct_words(self, book_title):
         book_words = self.books.find(book_title)
         if book_words is None:
             return []
         words = []
-        # print("BOOKSSSSS",book_words)
         for slot in book_words.table:
             if slot is not None:
-                if isinstance(slot, list):  # For chaining
+                if isinstance(slot, list):
                     words.extend([word for word in slot if word is not None])
-                else:  # For linear/double hashing
+                else:
                     words.append(slot)
-        return [word for word in words if word is not None]
-    
+        return words
+
     def count_distinct_words(self, book_title):
         book_words = self.books.find(book_title)
         if book_words is None:
@@ -67,62 +51,37 @@ class JGBLibrary(DigitalLibrary):
 
     def search_keyword(self, keyword):
         matching_books = []
-        for slot in self.books.table:
-            if slot is None:
-                continue
-            if isinstance(slot, list):  # Chain collision handling
-                for book_entry in slot:
-                    if book_entry is not None:
-                        book_title, word_set = book_entry
-                        if word_set.find(keyword):
-                            matching_books.append(book_title)
-            else:  # Linear/Double collision handling
-                if slot is not None:
-                    book_title, word_set = slot
-                    if word_set.find(keyword):
-                        matching_books.append(book_title)
+        for book_title in self.all_book_title_list:
+            book_words = self.books.find(book_title)
+            if book_words is not None and book_words.find(keyword):
+                matching_books.append(book_title)
+        return matching_books
 
-        return [book for book in matching_books if book is not None]
-    
     def print_books(self):
         result = []
-        for slot in self.books.table:
-            if slot is None:
-                continue
-            if self.collision_type == "Chain" and isinstance(slot, list):
-                for entry in slot:
-                    book_title = entry[0]
-                    book_words = entry[1]
-                    result.append(f"{book_title}: {str(book_words)}")
-            else:
-                if slot is not None:  # For linear probing and double hashing
-                    book_title = slot[0]
-                    book_words = slot[1]
-                    result.append(f"{book_title}: {str(book_words)}")
+        for book_title in self.all_book_title_list:
+            book_words = self.books.find(book_title)
+            if book_words is not None:
+                result.append(f"{book_title}: {str(book_words)}")
         print("\n".join(result))
-
 
 class MuskLibrary(DigitalLibrary):
     def __init__(self, book_titles, texts):
         super().__init__()
-        paired_data = list(zip(book_titles, texts))
 
-        sorted_pairs = self.mergesort(paired_data, key=lambda x: x[0])
-
-        self.titles = []
-        sorted_texts = []
+        sorted_pairs = self.mergesort(list(zip(book_titles, texts)), key=lambda x: x[0])
+        n_books = len(book_titles)
+        self.titles = [None] * n_books
+        self.book_words = [None] * n_books
+        self.word_counts = [None] * n_books
+        i = 0
         for title, text in sorted_pairs:
-            self.titles.append(title)
-            sorted_texts.append(text)
+            self.titles[i] = title
+            sorted_words = self.mergesort(list(text))
+            self.book_words[i] = sorted_words
+            self.word_counts[i] = len(sorted_words)
+            i += 1
 
-        self.book_words = []
-        self.word_counts = []
-
-        for words in sorted_texts:
-            words_list = list(words)
-            sorted_words = self.mergesort(words_list)
-            self.book_words.append(sorted_words)
-            self.word_counts.append(len(sorted_words))
     def mergesort(self, arr, key=lambda x: x):
         if len(arr) <= 1:
             return arr
@@ -132,6 +91,7 @@ class MuskLibrary(DigitalLibrary):
         right = self.mergesort(arr[mid:], key)
 
         return self.merge(left, right, key)
+
     def merge(self, left, right, key=lambda x: x):
         result = []
         i = j = 0
@@ -145,8 +105,6 @@ class MuskLibrary(DigitalLibrary):
                 if not result or result[-1] != right[j]:  # Append only if unique
                     result.append(right[j])
                 j += 1
-
-            # Add remaining items, ensuring they are distinct
         for item in left[i:]:
             if not result or result[-1] != item:
                 result.append(item)
@@ -155,6 +113,7 @@ class MuskLibrary(DigitalLibrary):
                 result.append(item)
 
         return result
+
     def find_book_index(self, book_title):
         left, right = 0, len(self.titles) - 1
 
@@ -166,18 +125,20 @@ class MuskLibrary(DigitalLibrary):
                 left = mid + 1
             else:
                 right = mid - 1
-
         return -1
+
     def distinct_words(self, book_title):
         idx = self.find_book_index(book_title)
         if idx == -1:
             return []
         return self.book_words[idx]
+
     def count_distinct_words(self, book_title):
         idx = self.find_book_index(book_title)
         if idx == -1:
             return 0
         return self.word_counts[idx]
+
     def search_keyword(self, keyword):
         matching_books = []
         for i in range(len(self.titles)):
@@ -193,6 +154,7 @@ class MuskLibrary(DigitalLibrary):
                 else:
                     right = mid - 1
         return matching_books
+
     def print_books(self):
         result = []
         for i in range(len(self.titles)):

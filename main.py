@@ -1,118 +1,223 @@
 import time
+from prime_generator import set_primes, get_next_size
+from hash_table import HashSet, HashMap
+from dynamic_hash_table import DynamicHashSet, DynamicHashMap
+from library import MuskLibrary, JGBLibrary
 
-import library
-import hash_table
-from prime_generator import set_primes
 
-def check_lib(lib, unique_words, word_to_books, sort_output=True):
-    dw1 = lib.distinct_words("book1")
-    dw2 = lib.distinct_words("book2")
-    
-    if sort_output:
-        dw1.sort()
-        dw2.sort()
-    if dw1 == sorted(unique_words[0]) and dw2 == sorted(unique_words[1]):
-        print("DISTINCT WORDS CORRECT!")
-    else:
-        print("DISTINCT WORDS FAILED!")
-    
-    if lib.count_distinct_words("book1") == len(unique_words[0]) and lib.count_distinct_words("book2") == len(unique_words[1]):
-        print("COUNT DISTINCT WORDS CORRECT!")
-    else:
-        print("COUNT DINSTINCT WORDS FAILED!")
-        
-    word = "book"
-    
-    sk = lib.search_keyword(word)
-    if sort_output:
-        sk.sort()
-        
-    if sk == sorted(word_to_books[word]):
-        print("SEARCH KEYWORD CORRECT!")
-    else:
-        print("SEARCH KEYWORD FAILED!")
-    print("\n\n")
-    
+def progress_bar(iterable, prefix='', suffix='', decimals=1, length=50, fill='█', printEnd="\r"):
+    total = len(iterable)
 
-def get_primes(start = 10**3, end = 10**5):
-    is_prime = [True] * (end+1)
-    is_prime[0] = is_prime[1] = False
-    
-    for i in range(2, end+1):
-        if not is_prime[i]: continue
-        
-        for j in range(2*i, end+1, i):
-            is_prime[j] = False
-    
-    prime_sizes = []
-    sz = start
-    while sz <= end:
-        if not is_prime[sz]:
-            sz += 1
-            continue
-        
-        prime_sizes.append(sz)
-        sz *= 2
-        
-    prime_sizes.reverse()
-    return prime_sizes
+    def printProgressBar(iteration):
+        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        filledLength = int(length * iteration // total)
+        bar = fill * filledLength + '-' * (length - filledLength)
+        print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=printEnd)
 
-def main():
-    book_titles = ["book1", "book2"]
-    texts = [["The", "name", "of", "this", "book", "contains", "a", "number"],
-             ["You", "can", "name", "this", "book", "anything",'this','can']]
+    printProgressBar(0)
+    for i, item in enumerate(iterable):
+        yield item
+        printProgressBar(i + 1)
+    print()
 
-    unique_words = []
 
-    for text in texts:
-        unique = []
+def test_hash_set():
+    print("\nTesting HashSet Implementation...")
+    tests = [
+        ("Linear", (3, 37)),
+        ("Double", (3, 5, 7, 37)),
+        ("Chain", (3, 37))
+    ]
 
-        for word in text[:]:  # Use a copy of the original list
-            if word not in unique:
-                unique.append(word)
+    for collision_type, params in progress_bar(tests, prefix='Progress:', suffix='Complete', length=50):
+        print(f"\nTesting {collision_type} Collision Resolution:")
 
-        unique_words.append(sorted(unique))
+        # Initialize HashSet
+        hash_set = HashSet(collision_type, params)
 
-    word_to_books = {}
+        # Test basic insertion and find
+        test_words = ["apple", "banana", "cherry", "date", "elderberry"]
+        for word in test_words:
+            hash_set.insert(word)
+            if (hash_set.find(word) == False):
+                print(collision_type, word)
+            assert hash_set.find(word) == True, f"Failed to find {word} after insertion"
 
-    for book, text in zip(book_titles, texts):
-        for word in text[:]:  # Use a copy of the original list
-            if word not in word_to_books:
-                word_to_books[word] = [book]
-            else:
-                word_to_books[word].append(book)
-        
-    set_primes(get_primes())
-    #
-    # Check Musk
-    musk_time = time.time()
-    musk_lib = library.MuskLibrary(book_titles, texts)
-    print(musk_lib.print_books())
-    musk_time = time.time() - musk_time
-    #
-    print(f"Musk Library sorting took {musk_time:.4f}s")
-    print(f"Checking Library functions for Musk:")
-    check_lib(musk_lib, unique_words, word_to_books)
-    #
-    # jobs_lib = library.JGBLibrary("Jobs", (10, 29))
-    # gates_lib = library.JGBLibrary("Gates", (10, 37))
-    # bezos_lib = library.JGBLibrary("Bezos",
-    #                           (10, 37,
-    #                            7, 13)
-    #                           )
-    #
-    # for lib, name in zip([jobs_lib, gates_lib, bezos_lib], ["Jobs", "Gates", "Bezos"]):
-    #     time_taken = time.time()
-    #
-    #     for book, text in zip(book_titles, texts):
-    #         lib.add_book(book, text)
-    #
-    #     time_taken = time.time() - time_taken
-    #
-    #     print(f"{name} Library took {time_taken:.4f}s")
-    #     print(f"Checking Library Functions for {name}: ")
-    #     check_lib(lib, unique_words, word_to_books)
-    
+        # Test duplicate insertion
+        for word in test_words:
+            hash_set.insert(word)
+            assert hash_set.get_load() == len(test_words) / params[-1], "Load factor changed after duplicate insertion"
+
+        # Test non-existent elements
+        assert hash_set.find("nonexistent") == False, "Found non-existent element"
+
+        # Test slot retrieval
+        for word in test_words:
+            slot = hash_set.get_slot(word)
+            assert slot is not None, f"Slot not found for existing word {word}"
+
+        print(f"Load factor: {hash_set.get_load():.2f}")
+        print(f"Final table: {hash_set}")
+
+
+def test_hash_map():
+    print("\nTesting HashMap Implementation...")
+    tests = [
+        ("Linear", (3, 37)),
+        ("Double", (3, 5, 7, 37)),
+        ("Chain", (3, 37))
+    ]
+
+    for collision_type, params in progress_bar(tests, prefix='Progress:', suffix='Complete', length=50):
+        print(f"\nTesting {collision_type} Collision Resolution:")
+
+        # Initialize HashMap
+        hash_map = HashMap(collision_type, params)
+
+        # Test key-value insertion and retrieval
+        test_pairs = [
+            ("booka", "The Hobbit"),
+            ("bookb", "vivek"),
+            ("bookc", "Dune"),
+            ("bookd", "Foundation"),
+            ("booke", "Neuromancer")
+        ]
+
+        for key, value in test_pairs:
+            hash_map.insert((key, value))
+            assert hash_map.find(key) == value, f"Wrong value retrieved for {key}"
+
+        # Test duplicate key insertion (should keep original value)
+        original_value = hash_map.find("booka")
+        hash_map.insert(("booka", "The Lord of the Rings"))
+        assert hash_map.find("booka") == original_value, "Original value was not preserved for duplicate key"
+        assert hash_map.get_load() == len(test_pairs) / params[-1], "Load factor changed after duplicate insertion"
+
+        # Test non-existent keys
+        assert hash_map.find("nonexistent") is None, "Found value for non-existent key"
+
+        # Test slot retrieval
+        for key, _ in test_pairs:
+            slot = hash_map.get_slot(key)
+            assert slot is not None, f"Slot not found for existing key {key}"
+
+        print(f"Load factor: {hash_map.get_load():.2f}")
+        # print(f"Final table: {hash_map}")
+
+
+def test_dynamic_hash_set():
+    print("\nTesting DynamicHashSet Implementation...")
+    # Set up prime numbers for rehashing
+    set_primes([5, 7, 11, 13, 17, 19, 23, 29, 37])
+    tests = [
+        ("Linear", (3, 5)),
+        ("Double", (3, 5, 7, 11)),
+        ("Chain", (3, 5))
+    ]
+
+    for collision_type, params in progress_bar(tests, prefix='Progress:', suffix='Complete', length=50):
+        print(f"\nTesting {collision_type} Collision Resolution:")
+
+        dynamic_set = DynamicHashSet(collision_type, params)
+        initial_size = dynamic_set.table_size
+
+        # Insert elements until rehashing occurs
+        inserted_words = []
+        for i in range(20):
+            word = f"word{i}"
+            initial_load = dynamic_set.get_load()
+            dynamic_set.insert(word)
+            inserted_words.append(word)
+
+            # Check if rehashing occurred
+            if dynamic_set.table_size > initial_size:
+                print(f"Rehashed at word: {word}")
+                print(f"Old size: {initial_size}, New size: {dynamic_set.table_size}")
+                print(f"Load before rehash: {initial_load:.2f}")
+                print(f"Load after rehash: {dynamic_set.get_load():.2f}")
+
+                # Verify all elements still exist after rehashing
+                for w in inserted_words:
+                    assert dynamic_set.find(w) == True, f"Lost element {w} after rehashing"
+                break
+
+        print(f"Final table: {dynamic_set}")
+
+
+def test_digital_library():
+    print("\nTesting Digital Library Implementation...")
+
+    # Test MuskLibrary
+    print("\nTesting MuskLibrary...")
+    book_titles = ["booka", "bookb", "bookc"]
+    texts = [
+        ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog", "quick"],
+        ["to", "be", "or", "not", "to", "be", "that", "is", "the", "question"],
+        ["all", "that", "glitters", "is", "not", "gold"]
+    ]
+
+    musk_lib = MuskLibrary(book_titles, texts)
+
+    # Test distinct words
+    for title in book_titles:
+        words = musk_lib.distinct_words(title)
+        count = musk_lib.count_distinct_words(title)
+        print(f"\nDistinct words in {title}: {words}")
+        print(f"Count of distinct words: {count}")
+
+    # Test keyword search
+    test_keywords = ["the", "is", "not", "nonexistent"]
+    for keyword in test_keywords:
+        books = musk_lib.search_keyword(keyword)
+        print(f"\nBooks containing '{keyword}': {books}")
+
+    print("\nPrinting all books:")
+    musk_lib.print_books()
+
+    # Test JGBLibrary
+    print("\nTesting JGBLibrary...")
+    libraries = [
+        ("Jobs", (3, 5)),
+        ("Bezos", (3, 5, 7, 11)),
+        ("Gates", (3, 5))
+    ]
+
+    for name, params in libraries:
+        print(f"\nTesting {name} Library:")
+        lib = JGBLibrary(name, params)
+
+        # Add books
+        lib.add_book("Testa", ["apple", "banana", "apple"])
+        lib.add_book("Testb", ["cherry", "date", "cherry"])
+
+        # Test functions
+        print("\nPrinting all books:")
+        lib.print_books()
+
+        print("\nSearching for 'apple':")
+        print(lib.search_keyword("apple"))
+
+        print("\nDistinct words in Testa:")
+        lib.distinct_words("Testa")
+
+        print(f"Count of distinct words in Test1: {lib.count_distinct_words('Testa')}")
+
+
+def run_all_tests():
+    print("Starting comprehensive hash table tests...")
+
+    all_tests = [
+        ("HashSet Tests", test_hash_set),
+        ("HashMap Tests", test_hash_map),
+        ("DynamicHashSet Tests", test_dynamic_hash_set),
+        ("Digital Library Tests", test_digital_library)
+    ]
+
+    for test_name, test_func in progress_bar(all_tests, prefix='Overall Progress:', suffix='Complete', length=50):
+        print(f"\n{'=' * 50}\nRunning {test_name}\n{'=' * 50}")
+        test_func()
+        time.sleep(0.5)
+
 
 if __name__ == "__main__":
-    main()
+    run_all_tests()
