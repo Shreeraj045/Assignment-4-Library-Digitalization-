@@ -1,12 +1,12 @@
 import hash_table as ht
 
 class DigitalLibrary:
-    # DO NOT CHANGE FUNCTIONS IN THIS BASE CLASS
     def __init__(self):pass
     def distinct_words(self, book_title):pass
     def count_distinct_words(self, book_title):pass
     def search_keyword(self, keyword):pass
     def print_books(self):pass
+
 class JGBLibrary(DigitalLibrary):
     def __init__(self, name, params):
         super().__init__()
@@ -64,7 +64,6 @@ class JGBLibrary(DigitalLibrary):
             if book_words is not None:
                 result.append(f"{book_title}: {str(book_words)}")
         print("\n".join(result))
-
 class MuskLibrary(DigitalLibrary):
     def __init__(self, book_titles, texts):
         super().__init__()
@@ -98,11 +97,11 @@ class MuskLibrary(DigitalLibrary):
 
         while i < len(left) and j < len(right):
             if key(left[i]) <= key(right[j]):
-                if not result or result[-1] != left[i]:  # Append only if unique
+                if not result or result[-1] != left[i]:
                     result.append(left[i])
                 i += 1
             else:
-                if not result or result[-1] != right[j]:  # Append only if unique
+                if not result or result[-1] != right[j]:
                     result.append(right[j])
                 j += 1
         for item in left[i:]:

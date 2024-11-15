@@ -63,6 +63,7 @@ class HashTable:
                 return True
         return False
 
+
     def linear_insert(self, key, value):
         return self._probe_insert(key, value,lambda slot, i: (slot + i) % self.table_size)
 
@@ -151,6 +152,40 @@ class HashTable:
                 if item is not None:
                     self.insert(item)
 
+    def get_index(self, book_title):
+        """Retrieve the index (and slot if chaining) of the specified book title in the hash table."""
+        slot = self.get_slot(book_title)  # Use the hash function to get the initial slot
+
+        if self.collision_type == "Chain":
+            # For chaining, search through the list at the specified slot
+            if self.table[slot] is not None:
+                for i, entry in enumerate(self.table[slot]):
+                    if entry[0] == book_title:
+                        return slot, i  # Return slot and index within the chain
+            return None  # Book title not found in chaining
+
+        elif self.collision_type == "Linear":
+            # For linear probing, search through the table starting from the initial slot
+            original_slot = slot
+            while self.table[slot] is not None:
+                if self.table[slot][0] == book_title:
+                    return slot  # Return the found slot index
+                slot = (slot + 1) % self.table_size
+                if slot == original_slot:
+                    break  # Prevent infinite loops if the table is full
+            return None  # Book title not found in linear probing
+
+        elif self.collision_type == "Double":
+            # For double hashing, use a secondary hash function to determine the probing step
+            step_size = self.doublehash_function(book_title)
+            original_slot = slot
+            while self.table[slot] is not None:
+                if self.table[slot][0] == book_title:
+                    return slot  # Return the found slot index
+                slot = (slot + step_size) % self.table_size
+                if slot == original_slot:
+                    break  # Prevent infinite loops if the table is full
+            return None  # Book title not found in double hashing
 
 class HashSet(HashTable):
     def __init__(self, collision_type, params):
